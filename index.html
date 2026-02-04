@@ -1,0 +1,343 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Vòng Quay May Mắn</title>
+    <style>
+      :root {
+        --bg1: #0c1a2b;
+        --bg2: #0f2d3f;
+        --accent: #ffb703;
+        --accent-2: #fb8500;
+        --ink: #f6f7fb;
+        --muted: #9fb3c8;
+        --card: rgba(255, 255, 255, 0.06);
+        --ring: rgba(255, 255, 255, 0.25);
+        --shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        height: 100%;
+      }
+      body {
+        margin: 0;
+        font-family: "Be Vietnam Pro", "Nunito", "Segoe UI", sans-serif;
+        color: var(--ink);
+        background:
+          radial-gradient(1200px 700px at 10% 10%, #1e3a5f 0%, transparent 60%),
+          radial-gradient(900px 700px at 90% 20%, #2a6f7f 0%, transparent 55%),
+          linear-gradient(160deg, var(--bg1), var(--bg2));
+        display: grid;
+        place-items: center;
+        padding: 24px;
+      }
+
+      .app {
+        width: min(980px, 100%);
+        display: grid;
+        gap: 24px;
+        grid-template-columns: 1fr;
+        align-items: center;
+        background: var(--card);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 24px;
+        padding: 28px;
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(10px);
+      }
+
+      .header {
+        display: grid;
+        gap: 12px;
+      }
+
+      .title {
+        font-family: "Cinzel", "Be Vietnam Pro", serif;
+        font-size: clamp(28px, 4vw, 42px);
+        letter-spacing: 0.02em;
+        margin: 0;
+      }
+
+      .subtitle {
+        margin: 0;
+        color: var(--muted);
+        font-size: clamp(14px, 2vw, 16px);
+        line-height: 1.5;
+      }
+
+      .board {
+        display: grid;
+        gap: 22px;
+        grid-template-columns: 1fr;
+        align-items: center;
+        justify-items: center;
+      }
+
+      .wheel-wrap {
+        position: relative;
+        width: min(420px, 90vw);
+        aspect-ratio: 1;
+        display: grid;
+        place-items: center;
+      }
+
+      canvas {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        box-shadow:
+          inset 0 0 0 16px rgba(255, 255, 255, 0.08),
+          0 30px 60px rgba(0, 0, 0, 0.45);
+        background: radial-gradient(circle at center, #16283c 0%, #0d1e2f 65%);
+      }
+
+      .pointer {
+        position: absolute;
+        top: 50%;
+        right: -14px;
+        transform: translateY(-50%) rotate(-90deg);
+        width: 0;
+        height: 0;
+        border-left: 18px solid transparent;
+        border-right: 18px solid transparent;
+        border-bottom: 32px solid var(--accent);
+        filter: drop-shadow(0 8px 8px rgba(0, 0, 0, 0.45));
+      }
+
+      .center-cap {
+        position: absolute;
+        width: 90px;
+        height: 90px;
+        border-radius: 50%;
+        background: radial-gradient(
+          circle at 30% 30%,
+          #ffe8a1 0%,
+          var(--accent-2) 60%
+        );
+        box-shadow: inset 0 0 0 10px rgba(255, 255, 255, 0.18);
+        display: grid;
+        place-items: center;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        font-size: 12px;
+        color: #2a1c00;
+      }
+
+      .panel {
+        width: 100%;
+        display: grid;
+        gap: 16px;
+        text-align: center;
+      }
+
+      .button {
+        border: none;
+        background: linear-gradient(135deg, var(--accent), var(--accent-2));
+        color: #2a1c00;
+        font-size: 18px;
+        font-weight: 700;
+        padding: 14px 28px;
+        border-radius: 999px;
+        cursor: pointer;
+        transition:
+          transform 0.2s ease,
+          box-shadow 0.2s ease;
+        box-shadow: 0 12px 30px rgba(255, 183, 3, 0.35);
+      }
+
+      .button:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        box-shadow: none;
+      }
+
+      .button:hover:not(:disabled) {
+        transform: translateY(-2px) scale(1.02);
+      }
+
+      .result {
+        font-size: clamp(16px, 2vw, 18px);
+        color: var(--ink);
+        padding: 12px 16px;
+        border-radius: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        background: rgba(10, 20, 35, 0.6);
+      }
+
+      .legend {
+        display: grid;
+        gap: 10px;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        margin-top: 10px;
+      }
+
+      .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 14px;
+        color: var(--muted);
+      }
+
+      .swatch {
+        width: 14px;
+        height: 14px;
+        border-radius: 4px;
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.3);
+      }
+
+      @media (min-width: 900px) {
+        .app {
+          grid-template-columns: 1.1fr 0.9fr;
+          padding: 36px;
+        }
+        .panel {
+          text-align: left;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="app">
+      <section class="header">
+        <h1 class="title">Vòng Quay May Mắn</h1>
+        <p class="subtitle">
+          Nhấn quay để tết đồng ấm hơn! Vòng quay sẽ quyết định ai sẽ uống.
+        </p>
+      </section>
+
+      <section class="board">
+        <div class="wheel-wrap">
+          <div class="pointer" aria-hidden="true"></div>
+          <canvas id="wheel" width="500" height="500"></canvas>
+          <div class="center-cap">Spin</div>
+        </div>
+
+        <div class="panel">
+          <button id="spinButton" class="button">Quay Ngay</button>
+          <div id="result" class="result">Chúc bạn may mắn!</div>
+          <div id="legend" class="legend"></div>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      const segments = [
+        { label: "Bên trái uống", color: "#ff595e" },
+        { label: "Bên phải uống", color: "#ffca3a" },
+        { label: "Đối diện uống", color: "#8ac926" },
+        { label: "An toàn", color: "#1982c4" },
+        { label: "Bạn uống", color: "#6a4c93" },
+        { label: "Không uống", color: "#ff924c" },
+        { label: "2 chén", color: "#00b4d8" },
+        { label: "Cả bạn cùng uống", color: "#b5179e" },
+      ];
+
+      const canvas = document.getElementById("wheel");
+      const ctx = canvas.getContext("2d");
+      const spinButton = document.getElementById("spinButton");
+      const result = document.getElementById("result");
+      const legend = document.getElementById("legend");
+
+      const radius = canvas.width / 2;
+      const center = { x: radius, y: radius };
+      const segmentAngle = (Math.PI * 2) / segments.length;
+      const pointerAngle = 0; // Kim ở bên phải (0 rad)
+      let currentAngle = 0;
+      let spinning = false;
+
+      function drawWheel() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        segments.forEach((segment, index) => {
+          const start = currentAngle + index * segmentAngle;
+          const end = start + segmentAngle;
+
+          ctx.beginPath();
+          ctx.moveTo(center.x, center.y);
+          ctx.arc(center.x, center.y, radius - 12, start, end);
+          ctx.closePath();
+          ctx.fillStyle = segment.color;
+          ctx.fill();
+
+          ctx.save();
+          ctx.translate(center.x, center.y);
+          ctx.rotate(start + segmentAngle / 2);
+          ctx.textAlign = "right";
+          ctx.fillStyle = "rgba(255,255,255,0.95)";
+          ctx.font = "600 18px 'Be Vietnam Pro', sans-serif";
+          ctx.fillText(segment.label, radius - 28, 8);
+          ctx.restore();
+        });
+
+        ctx.beginPath();
+        ctx.arc(center.x, center.y, radius - 6, 0, Math.PI * 2);
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.35)";
+        ctx.lineWidth = 6;
+        ctx.stroke();
+      }
+
+      function renderLegend() {
+        legend.innerHTML = "";
+        segments.forEach((segment) => {
+          const item = document.createElement("div");
+          item.className = "legend-item";
+          item.innerHTML = `<span class="swatch" style="background:${segment.color}"></span>${segment.label}`;
+          legend.appendChild(item);
+        });
+      }
+
+      function easeOutCubic(t) {
+        return 1 - Math.pow(1 - t, 3);
+      }
+
+      function spin() {
+        if (spinning) return;
+        spinning = true;
+        spinButton.disabled = true;
+        result.textContent = "Đang quay...";
+
+        const rotations = 6 + Math.floor(Math.random() * 3);
+        const randomOffset = Math.random() * Math.PI * 2;
+        const startAngle = currentAngle;
+        const endAngle = rotations * Math.PI * 2 + randomOffset;
+        const duration = 4500 + Math.random() * 1200;
+        const startTime = performance.now();
+
+        function animate(time) {
+          const elapsed = time - startTime;
+          const progress = Math.min(elapsed / duration, 1);
+          const eased = easeOutCubic(progress);
+          currentAngle = startAngle + (endAngle - startAngle) * eased;
+          drawWheel();
+
+          if (progress < 1) {
+            requestAnimationFrame(animate);
+          } else {
+            currentAngle = endAngle % (Math.PI * 2);
+            spinning = false;
+            spinButton.disabled = false;
+            const angleFromStart =
+              (pointerAngle - currentAngle + Math.PI * 2) % (Math.PI * 2);
+            const winnerIndex =
+              Math.floor(angleFromStart / segmentAngle) % segments.length;
+            result.textContent = `Bạn nhận được: ${segments[winnerIndex].label}`;
+          }
+        }
+
+        requestAnimationFrame(animate);
+      }
+
+      spinButton.addEventListener("click", spin);
+
+      renderLegend();
+      drawWheel();
+    </script>
+  </body>
+</html>

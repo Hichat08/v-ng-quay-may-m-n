@@ -25,6 +25,7 @@
       const winModal = document.getElementById("winModal");
       const modalResult = document.getElementById("modalResult");
       const closeModal = document.getElementById("closeModal");
+      const bgMusic = document.getElementById("bgMusic");
 
       const radius = canvas.width / 2;
       const center = { x: radius, y: radius };
@@ -173,6 +174,18 @@
         clearTimeout(modalTimer);
       }
 
+      function tryPlayMusic() {
+        if (!bgMusic || bgMusic.dataset.started === "true") return;
+        bgMusic.dataset.started = "true";
+        bgMusic.volume = 0.35;
+        const playPromise = bgMusic.play();
+        if (playPromise && typeof playPromise.catch === "function") {
+          playPromise.catch(() => {
+            bgMusic.dataset.started = "false";
+          });
+        }
+      }
+
       function buildSegmentsFromNames(names) {
         if (names.length < 2) {
           segments = [...defaultSegments];
@@ -264,6 +277,8 @@
       addName.addEventListener("click", addSingleName);
       clearNames.addEventListener("click", clearNameList);
       closeModal.addEventListener("click", closeWinner);
+      document.addEventListener("click", tryPlayMusic, { once: true });
+      document.addEventListener("touchstart", tryPlayMusic, { once: true });
       winModal.addEventListener("click", (event) => {
         if (event.target === winModal) {
           closeWinner();

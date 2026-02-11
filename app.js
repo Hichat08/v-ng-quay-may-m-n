@@ -1,4 +1,4 @@
-      const defaultSegments = [
+﻿      const defaultSegments = [
         { label: "Bên trái uống", color: "#ff595e" },
         { label: "Bên phải uống", color: "#ffca3a" },
         { label: "Đối diện uống", color: "#8ac926" },
@@ -31,6 +31,7 @@
       const center = { x: radius, y: radius };
       let segmentAngle = (Math.PI * 2) / segments.length;
       const pointerAngle = 0; // Kim ở bên phải (0 rad)
+      const fullCircle = Math.PI * 2;
       let currentAngle = 0;
       let spinning = false;
       let fireworksTimer = null;
@@ -92,6 +93,29 @@
           colors.push(`hsl(${hue}, 80%, 55%)`);
         }
         return colors;
+      }
+
+      function normalizeAngle(angle) {
+        return ((angle % fullCircle) + fullCircle) % fullCircle;
+      }
+
+      function randomInt(max) {
+        if (max <= 0) return 0;
+
+        if (window.crypto && typeof window.crypto.getRandomValues === "function") {
+          const values = new Uint32Array(1);
+          const limit = Math.floor(0x100000000 / max) * max;
+          let n = 0;
+
+          do {
+            window.crypto.getRandomValues(values);
+            n = values[0];
+          } while (n >= limit);
+
+          return n % max;
+        }
+
+        return Math.floor(Math.random() * max);
       }
 
       function launchFireworks(duration = 2200) {
@@ -237,10 +261,15 @@
         centerSpin.disabled = true;
         result.textContent = "Đang quay...";
 
-        const rotations = 6 + Math.floor(Math.random() * 3);
-        const randomOffset = Math.random() * Math.PI * 2;
+        const rotations = 6 + randomInt(3);
+        const winnerIndex = randomInt(segments.length);
         const startAngle = currentAngle;
-        const endAngle = rotations * Math.PI * 2 + randomOffset;
+        const startNormalized = normalizeAngle(startAngle);
+        const targetAngle = normalizeAngle(
+          pointerAngle - (winnerIndex + 0.5) * segmentAngle
+        );
+        const deltaToTarget = normalizeAngle(targetAngle - startNormalized);
+        const endAngle = startAngle + rotations * fullCircle + deltaToTarget;
         const duration = 5200 + Math.random() * 1600;
         const startTime = performance.now();
 
@@ -255,14 +284,10 @@
           if (progress < 1) {
             requestAnimationFrame(animate);
           } else {
-            currentAngle = endAngle % (Math.PI * 2);
+            currentAngle = normalizeAngle(endAngle);
             spinning = false;
             spinButton.disabled = false;
             centerSpin.disabled = false;
-            const angleFromStart =
-              (pointerAngle - currentAngle + Math.PI * 2) % (Math.PI * 2);
-            const winnerIndex =
-              Math.floor(angleFromStart / segmentAngle) % segments.length;
             const label = segments[winnerIndex].label;
             result.textContent = `Bạn nhận được: ${label}`;
             showWinner(label);
@@ -277,8 +302,9 @@
       addName.addEventListener("click", addSingleName);
       clearNames.addEventListener("click", clearNameList);
       closeModal.addEventListener("click", closeWinner);
-      document.addEventListener("click", tryPlayMusic, { once: true });
-      document.addEventListener("touchstart", tryPlayMusic, { once: true });
+      window.addEventListener("load", tryPlayMusic);
+      document.addEventListener("click", tryPlayMusic);
+      document.addEventListener("touchstart", tryPlayMusic);
       winModal.addEventListener("click", (event) => {
         if (event.target === winModal) {
           closeWinner();
@@ -293,3 +319,4 @@
 
       renderLegend();
       drawWheel();
+      tryPlayMusic();
